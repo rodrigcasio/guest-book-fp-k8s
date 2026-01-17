@@ -6,11 +6,12 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Basic middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve files from public folder
+// Serve static files (this covers style.css, script.js, and jquery)
 app.use(express.static(path.join(__dirname, 'public')));
 
 let memoryStore = new Map();
@@ -21,10 +22,11 @@ async function initRedis() {
   const port = process.env.REDIS_MASTER_SERVICE_PORT || 6379;
   if (host) {
     redisClient = redis.createClient({ url: `redis://${host}:${port}` });
-    await redisClient.connect().catch(console.error);
+    await redisClient.connect().catch(err => console.log("Redis not ready yet"));
   }
 }
 
+// API Routes for Guestbook
 app.get('/lrange/:key', async (req, res) => {
   const key = req.params.key;
   if (redisClient) {
@@ -47,14 +49,29 @@ app.get('/rpush/:key/:value', async (req, res) => {
   res.json(list);
 });
 
+// Information Routes (Matches your index.html links)
 app.get('/hello', (req, res) => {
   res.send(`Hello! Hostname: ${require('os').hostname()}\n`);
 });
 
+app.get('/env', (req, res) => {
+  res.json(process.env);
+});
+
+app.get('/info', (req, res) => {
+  res.json({
+    podName: require('os').hostname(),
+    platform: process.platform,
+    nodeVersion: process.version
+  });
+});
+
+// Serve the landing page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Initialize and Listen
 initRedis().then(() => {
-  app.listen(PORT, () => console.log(`Listening on ${PORT}`));
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });

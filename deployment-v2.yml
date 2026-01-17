@@ -29,10 +29,10 @@ spec:
           name: http
         resources:
           limits:
-            cpu: 50m
+            cpu: 100m
             memory: 128Mi
           requests:
-            cpu: 5m
+            cpu: 200m
             memory: 64Mi
         env:
         - name: REDIS_MASTER_SERVICE_HOST

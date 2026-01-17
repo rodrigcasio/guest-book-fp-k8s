@@ -40,35 +40,35 @@ async function initRedis() {
   try {
     const redisUrl = findRedisURL();
     console.log('Redis URL:', redisUrl || 'Not found, using in-memory storage');
-    
+
     if (redisUrl) {
       // Initialize master connection
       redisClient = redis.createClient({
         url: redisUrl
       });
-      
+
       redisClient.on('error', (err) => {
         console.error('Redis Master Error:', err);
         redisClient = null;
       });
-      
+
       redisClient.on('connect', () => {
         console.log('Connected to Redis master');
       });
-      
+
       await redisClient.connect();
-      
+
       // Try to initialize slave connection
       try {
         redisSlaveClient = redis.createClient({
           url: 'redis://redis-slave:6379'
         });
-        
+
         redisSlaveClient.on('error', (err) => {
           console.log('Redis Slave not available, using master for reads');
           redisSlaveClient = null;
         });
-        
+
         await redisSlaveClient.connect();
         console.log('Connected to Redis slave');
       } catch (err) {
@@ -101,12 +101,12 @@ async function getList(key) {
   try {
     // Try slave first, then master, then memory
     const client = redisSlaveClient || redisClient;
-    
+
     if (client) {
       const result = await client.lRange(key, 0, -1);
       return result || [];
     }
-    
+
     // Fallback to in-memory storage
     return memoryStore.get(key) || [];
   } catch (error) {
@@ -122,7 +122,7 @@ async function appendToList(item, key) {
       const result = await redisClient.lRange(key, 0, -1);
       return result || [];
     }
-    
+
     // Fallback to in-memory storage
     const currentList = memoryStore.get(key) || [];
     currentList.push(item);
@@ -191,36 +191,36 @@ app.get('/', (req, res) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
-  
+
   if (redisClient) {
     await redisClient.quit();
   }
-  
+
   if (redisSlaveClient) {
     await redisSlaveClient.quit();
   }
-  
+
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
-  
+
   if (redisClient) {
     await redisClient.quit();
   }
-  
+
   if (redisSlaveClient) {
     await redisSlaveClient.quit();
   }
-  
+
   process.exit(0);
 });
 
 // Initialize Redis and start server
 async function startServer() {
   await initRedis();
-  
+
   app.listen(PORT, () => {
     console.log(`Guestbook server is running on port ${PORT}`);
     console.log(`Visit http://localhost:${PORT} to view the application`);
@@ -231,3 +231,4 @@ startServer().catch(error => {
   console.error('Failed to start server:', error);
   process.exit(1);
 });
+

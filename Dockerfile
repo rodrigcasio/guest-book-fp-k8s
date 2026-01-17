@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm install --production
 
 COPY server.js ./
+
 COPY public ./public/
 
 RUN addgroup -g 1001 -S nodejs && \
